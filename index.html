@@ -1,0 +1,402 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zelt-Finder Familienauswertung</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 20px;
+    line-height: 1.5;
+}
+
+h1, h2, h3 {
+    color: #14532d;
+}
+
+label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+input,
+select,
+button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+}
+
+button {
+    margin-top: 15px;
+    background: #166534;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #14532d;
+}
+
+#result,
+#familie {
+    margin-top: 25px;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background: #f8f8f8;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th,
+td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background: #e7f5ea;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🏕️ Zelt-Finder für Wandern & Bikepacking</h1>
+
+<p>
+Jedes Kind füllt den Fragebogen aus und speichert seine Bewertung.
+Am Schluss erscheint automatisch die Familienauswertung.
+</p>
+
+<label>Name</label>
+<input type="text" id="name" placeholder="Vorname">
+
+<label>1. Was ist wichtiger?</label>
+<select id="prio">
+    <option value="gewicht">Jedes Gramm zählt</option>
+    <option value="mix">Ausgewogen</option>
+    <option value="komfort">Komfort ist wichtiger</option>
+</select>
+
+<label>
+2. Müssen zwei breite Schlafmatten (2 × 65 cm) nebeneinander Platz haben?
+</label>
+<select id="matten">
+    <option value="ja">
+        Ja, das ist ein KO-Kriterium
+    </option>
+
+    <option value="komfort">
+        Ja, plus zusätzlicher Platz für Kleidung/Gepäck
+    </option>
+
+    <option value="nein">
+        Normale Matten reichen
+    </option>
+</select>
+
+<label>3. Benötigte Innenzeltbreite?</label>
+<select id="breite">
+    <option value="130">130 cm genügen</option>
+    <option value="140">Mindestens 140 cm</option>
+    <option value="150">Mindestens 150 cm</option>
+</select>
+
+<label>4. Haupteinsatz?</label>
+<select id="einsatz">
+    <option value="bike">Bikepacking</option>
+    <option value="wandern">Wandertouren</option>
+    <option value="beides">Beides gleich häufig</option>
+</select>
+
+<label>5. Freistehend wichtig?</label>
+<select id="frei">
+    <option value="ja">Ja</option>
+    <option value="egal">Egal</option>
+    <option value="nein">Nein</option>
+</select>
+
+<label>6. Gepäck bei Regen teilweise im Innenzelt?</label>
+<select id="gepaeck">
+    <option value="ja">Ja</option>
+    <option value="nein">Nein</option>
+</select>
+
+<label>7. Maximale Gestängelänge?</label>
+<select id="stangen">
+    <option value="35">Unter 35 cm</option>
+    <option value="45">Unter 45 cm</option>
+    <option value="egal">Egal</option>
+</select>
+
+<label>8. Maximales Zeltgewicht?</label>
+<select id="gewicht">
+    <option value="15">Unter 1.5 kg</option>
+    <option value="20">1.5 - 2.0 kg</option>
+    <option value="30">2.0 - 3.0 kg</option>
+</select>
+
+<label>9. Du bekommst das Zelt gratis. Welches würdest du sofort nehmen?</label>
+<select id="favorit">
+    <option value="anjan">Hilleberg Anjan 3</option>
+    <option value="copper">Big Agnes Copper Spur Bikepack 2</option>
+    <option value="hubba">MSR Hubba Hubba Bikepack 2</option>
+    <option value="dragonfly">Nemo Dragonfly Bikepack 2P</option>
+    <option value="xmid">Durston X-Mid 2</option>
+    <option value="anaris">Hilleberg Anaris</option>
+</select>
+
+<label>10. Wie attraktiv findest du das Hilleberg Anjan 3?</label>
+<select id="anjanScore">
+    <option value="10">10 - Genau das suche ich</option>
+    <option value="9">9 - Fast perfekt</option>
+    <option value="8">8 - Sehr interessant</option>
+    <option value="7">7 - Würde ich wählen</option>
+    <option value="6">6 - Solider Kompromiss</option>
+    <option value="5">5 - Neutral</option>
+    <option value="4">4 - Eher nicht</option>
+    <option value="3">3 - Passt kaum</option>
+    <option value="2">2 - Falsche Richtung</option>
+    <option value="1">1 - Niemals</option>
+</select>
+
+<button onclick="empfehlung()">
+Individuelle Empfehlung anzeigen
+</button>
+
+<button onclick="speichern()">
+Zur Familienauswertung hinzufügen
+</button>
+
+<div id="result"></div>
+
+<div id="familie">
+<h2>👨‍👩‍👧‍👦 Familienauswertung</h2>
+<p>Noch keine Bewertungen gespeichert.</p>
+</div>
+
+<script>
+
+let familienDaten = [];
+
+const zeltNamen = {
+    anjan: "Hilleberg Anjan 3",
+    copper: "Big Agnes Copper Spur Bikepack 2",
+    hubba: "MSR Hubba Hubba Bikepack 2",
+    dragonfly: "Nemo Dragonfly Bikepack 2P",
+    xmid: "Durston X-Mid 2",
+    anaris: "Hilleberg Anaris"
+};
+
+function empfehlung() {
+
+    const matten = document.getElementById("matten").value;
+    const prio = document.getElementById("prio").value;
+    const frei = document.getElementById("frei").value;
+    const einsatz = document.getElementById("einsatz").value;
+    const gewicht = document.getElementById("gewicht").value;
+
+    let html = "";
+
+    if (matten === "komfort") {
+
+        html = `
+        <h2>✅ Empfehlung: Geräumiges 3-Personen-Zelt</h2>
+        <ul>
+            <li>Hilleberg Anjan 3</li>
+            <li>Big Agnes Copper Spur HV UL3</li>
+            <li>MSR Hubba Hubba 3</li>
+            <li>Fjällräven Abisko Endurance 3</li>
+        </ul>
+        <p>
+        Zwei breite Matten plus zusätzliche Ausrüstung sprechen klar
+        für ein leichtes 3-Personen-Zelt.
+        </p>
+        `;
+
+    } else if (frei === "ja" && einsatz !== "wandern") {
+
+        html = `
+        <h2>✅ Empfehlung: Freistehendes Bikepacking-Zelt</h2>
+        <ul>
+            <li>Big Agnes Copper Spur Bikepack</li>
+            <li>MSR Hubba Hubba Bikepack</li>
+            <li>Nemo Dragonfly Bikepack</li>
+        </ul>
+        `;
+
+    } else if (prio === "gewicht" && gewicht === "15") {
+
+        html = `
+        <h2>✅ Empfehlung: Ultraleichtes Trekkingstock-Zelt</h2>
+        <ul>
+            <li>Durston X-Mid 2</li>
+            <li>Hilleberg Anaris</li>
+            <li>Tarptent Stratospire 2</li>
+        </ul>
+        `;
+
+    } else {
+
+        html = `
+        <h2>✅ Empfehlung: Trekking-Tunnelzelt</h2>
+        <ul>
+            <li>Hilleberg Anjan 3</li>
+            <li>Vaude Taurus UL</li>
+            <li>Wechsel Exogen</li>
+        </ul>
+        `;
+    }
+
+    document.getElementById("result").innerHTML = html;
+}
+
+function speichern() {
+
+    const name = document.getElementById("name").value.trim();
+
+    if (name === "") {
+        alert("Bitte einen Namen eingeben.");
+        return;
+    }
+
+    familienDaten.push({
+        name: name,
+        favorit: document.getElementById("favorit").value,
+        anjanScore: parseInt(document.getElementById("anjanScore").value),
+        matten: document.getElementById("matten").value
+    });
+
+    familienAuswertung();
+
+    document.getElementById("name").value = "";
+}
+
+function familienAuswertung() {
+
+    let summe = 0;
+    let stimmen = {};
+    let komfortStimmen = 0;
+
+    familienDaten.forEach(p => {
+
+        summe += p.anjanScore;
+
+        stimmen[p.favorit] =
+            (stimmen[p.favorit] || 0) + 1;
+
+        if (p.matten === "komfort") {
+            komfortStimmen++;
+        }
+    });
+
+    let topFavorit = "";
+    let maxStimmen = 0;
+
+    for (let key in stimmen) {
+
+        if (stimmen[key] > maxStimmen) {
+            maxStimmen = stimmen[key];
+            topFavorit = key;
+        }
+    }
+
+    const durchschnitt =
+        (summe / familienDaten.length).toFixed(1);
+
+    let html = `
+    <h2>👨‍👩‍👧‍👦 Familienauswertung</h2>
+
+    <p><b>Teilnehmer:</b> ${familienDaten.length}</p>
+
+    <table>
+    <tr>
+        <th>Name</th>
+        <th>Favorit</th>
+        <th>Anjan-Score</th>
+    </tr>`;
+
+    familienDaten.forEach(p => {
+
+        html += `
+        <tr>
+            <td>${p.name}</td>
+            <td>${zeltNamen[p.favorit]}</td>
+            <td>${p.anjanScore}</td>
+        </tr>`;
+    });
+
+    html += `</table>`;
+
+    html += `
+    <h3>📏 KO-Kriterium breite Matten</h3>
+    <p>
+    ${komfortStimmen} von ${familienDaten.length}
+    Personen wünschen Platz für zwei 65-cm-Matten
+    plus zusätzliche Ausrüstung.
+    </p>
+
+    <h3>🏆 Familiensieger</h3>
+    <p>
+    <b>${zeltNamen[topFavorit] || "-"}</b>
+    (${maxStimmen} Stimmen)
+    </p>
+
+    <h3>⭐ Hilleberg-Anjan-Score</h3>
+
+    <p>
+    Durchschnitt:
+    <b>${durchschnitt}/10</b>
+    </p>
+    `;
+
+    if (durchschnitt >= 8) {
+
+        html += `
+        <p style="color:green;font-weight:bold;">
+        ✅ Das Hilleberg Anjan 3 scheint die beste
+        Familienlösung zu sein.
+        </p>
+        `;
+
+    } else if (durchschnitt >= 6) {
+
+        html += `
+        <p style="color:blue;font-weight:bold;">
+        ℹ️ Anjan 3 bleibt Benchmark,
+        Copper Spur HV UL3 und Hubba Hubba 3 vergleichen.
+        </p>
+        `;
+
+    } else {
+
+        html += `
+        <p style="color:darkred;font-weight:bold;">
+        ⚠️ Die Familie tendiert eher zu Bikepacking-
+        oder freistehenden Konzepten.
+        </p>
+        `;
+    }
+
+    document.getElementById("familie").innerHTML = html;
+}
+
+</script>
+
+</body>
+</html>
